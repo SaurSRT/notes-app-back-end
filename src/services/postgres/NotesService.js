@@ -1,0 +1,33 @@
+const { Pool } = require('pg');
+const { nanoid } = require('nanoid');
+const InvariantError = require('../../exceptions/InvariantError');
+
+class NotesService {
+  constructor() {
+    this._pool = new Pool();
+  }
+
+  async addNote({ title, body, tags }) {
+    const id = nanoid(16);
+    const createdAt = new Date().toISOString();
+    const updatedAt = createdAt;
+
+    // Membuat objek query untuk menyimpan data ke database
+    const query = {
+      text: 'INSERT INTO notes VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
+      values: [id, title, body, tags, createdAt, updatedAt],
+    };
+
+    // Mengeksekusi query (perlu await karena database itu asynchronous)
+    const result = await this._pool.query(query);
+
+    // Memastikan apakah id berhasil dikembalikan (berarti sukses insert)
+    if (!result.rows[0].id) {
+      throw new InvariantError('Catatan gagal ditambahkan');
+    }
+
+    return result.rows[0].id;
+  }
+}
+
+module.exports = NotesService;

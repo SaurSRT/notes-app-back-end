@@ -10,13 +10,12 @@ class NotesHandler {
     this.deleteNoteByIdHandler = this.deleteNoteByIdHandler.bind(this);
   }
 
-  postNoteHandler(request, h) {
-    // Cukup validasi dan panggil service.
-    // Kalau error, dia otomatis 'meledak' ke server.js untuk ditangani.
+  async postNoteHandler(request, h) {
     this._validator.validateNotePayload(request.payload);
     const { title = 'untitled', body, tags } = request.payload;
 
-    const noteId = this._service.addNote({ title, body, tags });
+    // Tambah await karena operasi database butuh waktu
+    const noteId = await this._service.addNote({ title, body, tags });
 
     const response = h.response({
       status: 'success',
@@ -29,8 +28,9 @@ class NotesHandler {
     return response;
   }
 
-  getNotesHandler() {
-    const notes = this._service.getNotes();
+  async getNotesHandler() {
+    // Tambah await
+    const notes = await this._service.getNotes();
     return {
       status: 'success',
       data: {
@@ -39,9 +39,10 @@ class NotesHandler {
     };
   }
 
-  getNoteByIdHandler(request, h) {
+  async getNoteByIdHandler(request, h) {
     const { id } = request.params;
-    const note = this._service.getNoteById(id);
+    // Tambah await
+    const note = await this._service.getNoteById(id);
     return {
       status: 'success',
       data: {
@@ -50,11 +51,12 @@ class NotesHandler {
     };
   }
 
-  putNoteByIdHandler(request, h) {
+  async putNoteByIdHandler(request, h) {
     this._validator.validateNotePayload(request.payload);
     const { id } = request.params;
 
-    this._service.editNoteById(id, request.payload);
+    // Tambah await
+    await this._service.editNoteById(id, request.payload);
 
     return {
       status: 'success',
@@ -62,9 +64,10 @@ class NotesHandler {
     };
   }
 
-  deleteNoteByIdHandler(request, h) {
+  async deleteNoteByIdHandler(request, h) {
     const { id } = request.params;
-    this._service.deleteNoteById(id);
+    // Tambah await
+    await this._service.deleteNoteById(id);
 
     return {
       status: 'success',
