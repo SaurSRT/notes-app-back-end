@@ -1,29 +1,44 @@
 const routes = (handler) => [
-    {
-        method : 'POST',
-        path : '/notes',
-        handler: handler.postNoteHandler,
+  {
+    method: 'POST',
+    path: '/notes',
+    handler: handler.postNoteHandler,
+    options: {
+      auth: 'notesapp_jwt', // Gembok dipasang
     },
-    {
-        method : 'GET',
-        path : '/notes',
-        handler: handler.getNotesHandler,
+  },
+  {
+    method: 'GET',
+    path: '/notes',
+    handler: handler.getNotesHandler,
+    options: {
+      auth: 'notesapp_jwt', // Gembok dipasang
     },
-    {
-        method : 'GET',
-        path : '/notes/{id}',
-        handler: handler.getNoteByIdHandler,
+  },
+  {
+    method: 'GET',
+    path: '/notes/{id}',
+    handler: handler.getNoteByIdHandler,
+    options: {
+      auth: 'notesapp_jwt', // Gembok dipasang
     },
-    {
-        method : 'PUT',
-        path : '/notes/{id}',
-        handler : handler.putNoteByIdHandler,
+  },
+  {
+    method: 'PUT',
+    path: '/notes/{id}',
+    handler: handler.putNoteByIdHandler,
+    options: {
+      auth: 'notesapp_jwt', // Gembok dipasang
     },
-    {
-        method : 'DELETE',
-        path : '/notes/{id}',
-        handler : handler.deleteNoteByIdHandler,
+  },
+  {
+    method: 'DELETE',
+    path: '/notes/{id}',
+    handler: handler.deleteNoteByIdHandler,
+    options: {
+      auth: 'notesapp_jwt', // Gembok dipasang
     },
+  },
 ];
 
 module.exports = routes;
