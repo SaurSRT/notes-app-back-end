@@ -10,11 +10,25 @@ class UsersService {
     this._pool = new Pool();
   }
 
-  // --- Pastikan method addUser yang sudah dibuat sebelumnya tetap ada di sini ---
   async addUser({ username, password, fullname }) {
+    await this.verifyNewUsername(username);
+
+    
+    const id = `user-${nanoid(16)}`;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const query = {
+      text: 'INSERT INTO users VALUES($1, $2, $3, $4) RETURNING id',
+      values: [id, username, hashedPassword, fullname],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new InvariantError('User gagal ditambahkan');
+    }
+    return result.rows[0].id;
   }
   
-  // --- Fungsi baru yang kita tambahkan ---
   async verifyUserCredential(username, password) {
     const query = {
       text: 'SELECT id, password FROM users WHERE username = $1',
@@ -23,22 +37,18 @@ class UsersService {
 
     const result = await this._pool.query(query);
 
-    // Cek apakah username ditemukan
     if (!result.rows.length) {
       throw new AuthenticationError('Kredensial yang Anda berikan salah');
     }
 
     const { id, password: hashedPassword } = result.rows[0];
 
-    // Komparasi password plain dengan password yang sudah di-hash
     const match = await bcrypt.compare(password, hashedPassword);
 
-    // Cek apakah password sesuai
     if (!match) {
       throw new AuthenticationError('Kredensial yang Anda berikan salah');
     }
 
-    // Jika lolos semua pengecekan, kembalikan id user
     return id;
   }
 }
