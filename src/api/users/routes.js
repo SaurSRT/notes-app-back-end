@@ -4,11 +4,15 @@ const routes = (handler) => [
     path: '/users',
     handler: handler.postUserHandler,
   },
-  // Route untuk melihat detail user (opsional jika sudah ada di materi)
   {
     method: 'GET',
     path: '/users/{id}',
     handler: handler.getUserByIdHandler,
+  },
+  {
+    method: 'GET',
+    path: '/users',
+    handler: handler.getUsersByUsernameHandler,
   },
 ];
 

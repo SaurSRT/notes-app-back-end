@@ -31,10 +31,6 @@ class NotesService {
   }
 
   async getNotes(owner) {
-    /* PERUBAHAN UTAMA DI SINI:
-      Menggunakan LEFT JOIN untuk mengambil catatan yang dimilikinya (owner)
-      ATAU catatan yang dikolaborasikan dengannya (collaborations.user_id).
-    */
     const query = {
       text: `SELECT notes.* FROM notes
       LEFT JOIN collaborations ON collaborations.note_id = notes.id
@@ -47,19 +43,27 @@ class NotesService {
     return result.rows.map(mapDBToModel);
   }
 
+  // --- PERUBAHAN UTAMA ADA DI SINI ---
   async getNoteById(id) {
     const query = {
-      text: 'SELECT * FROM notes WHERE id = $1',
+      // Ambil semua kolom notes DAN kolom username dari tabel users
+      text: `SELECT notes.*, users.username
+      FROM notes
+      LEFT JOIN users ON users.id = notes.owner
+      WHERE notes.id = $1`,
       values: [id],
     };
+
     const result = await this._pool.query(query);
 
     if (!result.rows.length) {
       throw new NotFoundError('Catatan tidak ditemukan');
     }
 
-    return mapDBToModel(result.rows[0]);
+    // Mapping hasilnya agar properti username terbawa
+    return result.rows.map(mapDBToModel)[0];
   }
+  // -----------------------------------
 
   async editNoteById(id, { title, body, tags }) {
     const updatedAt = new Date().toISOString();
