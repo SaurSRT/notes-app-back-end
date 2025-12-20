@@ -25,13 +25,15 @@ const collaborations = require('./api/collaborations');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 const CollaborationsValidator = require('./validator/collaborations');
 
+// ... (Bagian import di atas tetap sama) ...
+
 const init = async () => {
-  // 1. Instansiasi CollaborationsService TERLEBIH DAHULU
+  // 1. Buat CollaborationsService PALING PERTAMA
   const collaborationsService = new CollaborationsService();
-  
-  // 2. Masukkan collaborationsService ke dalam NotesService (Dependency Injection)
+
+  // 2. Masukkan collaborationsService ke dalam NotesService
   const notesService = new NotesService(collaborationsService);
-  
+
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
 
@@ -94,7 +96,6 @@ const init = async () => {
       },
     },
     {
-      // REGISTRASI PLUGIN COLLABORATIONS
       plugin: collaborations,
       options: {
         collaborationsService,
