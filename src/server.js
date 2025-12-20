@@ -1,7 +1,8 @@
+// mengimpor dotenv dan menjalankan konfigurasinya
 require('dotenv').config();
+
 const Hapi = require('@hapi/hapi');
-const Jwt = require('@hapi/jwt'); // 1. Import JWT
-const ClientError = require('./exceptions/ClientError');
+const Jwt = require('@hapi/jwt');
 
 // notes
 const notes = require('./api/notes');
@@ -19,8 +20,18 @@ const AuthenticationsService = require('./services/postgres/AuthenticationsServi
 const TokenManager = require('./tokenize/TokenManager');
 const AuthenticationsValidator = require('./validator/authentications');
 
+// collaborations (IMPORT BARU)
+const collaborations = require('./api/collaborations');
+const CollaborationsService = require('./services/postgres/CollaborationsService');
+const CollaborationsValidator = require('./validator/collaborations');
+
 const init = async () => {
-  const notesService = new NotesService();
+  // 1. Instansiasi CollaborationsService TERLEBIH DAHULU
+  const collaborationsService = new CollaborationsService();
+  
+  // 2. Masukkan collaborationsService ke dalam NotesService (Dependency Injection)
+  const notesService = new NotesService(collaborationsService);
+  
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
 
@@ -34,14 +45,14 @@ const init = async () => {
     },
   });
 
-  // 2. Registrasi plugin eksternal (JWT)
+  // registrasi plugin eksternal
   await server.register([
     {
       plugin: Jwt,
     },
   ]);
 
-  // 3. Mendefinisikan strategy autentikasi jwt
+  // mendefinisikan strategy otentikasi jwt
   server.auth.strategy('notesapp_jwt', 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
@@ -58,7 +69,6 @@ const init = async () => {
     }),
   });
 
-  // Registrasi plugin internal
   await server.register([
     {
       plugin: notes,
@@ -83,22 +93,16 @@ const init = async () => {
         validator: AuthenticationsValidator,
       },
     },
+    {
+      // REGISTRASI PLUGIN COLLABORATIONS
+      plugin: collaborations,
+      options: {
+        collaborationsService,
+        notesService,
+        validator: CollaborationsValidator,
+      },
+    },
   ]);
-
-  server.ext('onPreResponse', (request, h) => {
-    const { response } = request;
-
-    if (response instanceof ClientError) {
-      const newResponse = h.response({
-        status: 'fail',
-        message: response.message,
-      });
-      newResponse.code(response.statusCode);
-      return newResponse;
-    }
-
-    return h.continue;
-  });
 
   await server.start();
   console.log(`Server berjalan pada ${server.info.uri}`);
