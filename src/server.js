@@ -3,32 +3,38 @@ require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const path = require('path');
 
-// --- 1. Import Notes Plugin ---
+// 1. Notes Plugin
 const notes = require('./api/notes');
 const NotesService = require('./services/postgres/NotesService');
 const NotesValidator = require('./validator/notes');
 
-// --- 2. Import Users Plugin ---
+// 2. Users Plugin
 const users = require('./api/users');
 const UsersService = require('./services/postgres/UsersService');
 const UsersValidator = require('./validator/users');
 
-// --- 3. Import Authentications Plugin ---
+// 3. Authentications Plugin
 const authentications = require('./api/authentications');
 const AuthenticationsService = require('./services/postgres/AuthenticationsService');
 const TokenManager = require('./tokenize/TokenManager');
 const AuthenticationsValidator = require('./validator/authentications');
 
-// --- 4. Import Collaborations Plugin ---
+// 4. Collaborations Plugin
 const collaborations = require('./api/collaborations');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 const CollaborationsValidator = require('./validator/collaborations');
 
-// --- 5. Import Exports Plugin (RabbitMQ Producer) ---
+// 5. Exports Plugin (Message Broker)
 const _exports = require('./api/exports');
 const ProducerService = require('./services/rabbitmq/ProducerService');
 const ExportsValidator = require('./validator/exports');
+
+// 6. Uploads Plugin (Storage)
+const uploads = require('./api/uploads');
+const StorageService = require('./services/storage/StorageService');
+const UploadsValidator = require('./validator/uploads');
 
 const init = async () => {
   // Inisialisasi Service
@@ -36,6 +42,9 @@ const init = async () => {
   const notesService = new NotesService(collaborationsService);
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
+  
+  // Menetapkan basis folder untuk penyimpanan gambar secara lokal
+  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -104,12 +113,18 @@ const init = async () => {
         validator: CollaborationsValidator,
       },
     },
-    // Menambahkan plugin Exports ke dalam server
     {
       plugin: _exports,
       options: {
-        service: ProducerService, // Inject service Producer RabbitMQ
+        service: ProducerService,
         validator: ExportsValidator,
+      },
+    },
+    {
+      plugin: uploads,
+      options: {
+        service: storageService,
+        validator: UploadsValidator,
       },
     },
   ]);
