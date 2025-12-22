@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const Inert = require('@hapi/inert'); //
 const path = require('path');
 
 // 1. Notes Plugin
@@ -26,12 +27,12 @@ const collaborations = require('./api/collaborations');
 const CollaborationsService = require('./services/postgres/CollaborationsService');
 const CollaborationsValidator = require('./validator/collaborations');
 
-// 5. Exports Plugin (Message Broker)
+// 5. Exports Plugin (RabbitMQ Producer)
 const _exports = require('./api/exports');
 const ProducerService = require('./services/rabbitmq/ProducerService');
 const ExportsValidator = require('./validator/exports');
 
-// 6. Uploads Plugin (Storage)
+// 6. Uploads Plugin (Local Storage)
 const uploads = require('./api/uploads');
 const StorageService = require('./services/storage/StorageService');
 const UploadsValidator = require('./validator/uploads');
@@ -43,7 +44,7 @@ const init = async () => {
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
   
-  // Menetapkan basis folder untuk penyimpanan gambar secara lokal
+  // Inisialisasi StorageService dengan path folder tujuan gambar
   const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
   const server = Hapi.server({
@@ -56,10 +57,13 @@ const init = async () => {
     },
   });
 
-  // Registrasi plugin eksternal (JWT)
+  // Registrasi plugin eksternal
   await server.register([
     {
       plugin: Jwt,
+    },
+    {
+      plugin: Inert, // Registrasi Inert untuk melayani static files
     },
   ]);
 
